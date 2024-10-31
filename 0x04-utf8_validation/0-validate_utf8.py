@@ -1,35 +1,32 @@
 #!/usr/bin/python3
-""" This module checks if the recieved data is a valid UTF-8 encoding """
+"""UTF-8 Validation"""
+
+
+def get_leading_set_bits(num):
+    """returns the number of leading set bits (1)"""
+    set_bits = 0
+    helper = 1 << 7
+    while helper & num:
+        set_bits += 1
+        helper = helper >> 1
+    return set_bits
 
 
 def validUTF8(data):
-    """ Function to validate recieved data as UTF-8 encoding """
-    # Check each byte in the data
-    i = 0
-    while i < len(data):
-        byte = data[i]
-        # Number of bytes a character should occupy based on the most
-        # significant bits
-        if byte >> 7 == 0:  # 1 byte character: 0xxxxxxx
-            length = 0
-        elif byte >> 5 == 0b110:  # 2 bytes character: 110xxxxx
-            length = 1
-        elif byte >> 4 == 0b1110:  # 3 bytes character: 1110xxxx
-            length = 2
-        elif byte >> 3 == 0b11110:  # 4 bytes character: 11110xxx
-            length = 3
-        else:
-            return False
-
-        # Check if there are enough bytes in the data for this character
-        if i + length >= len(data):
-            return False
-
-        # Check that following bytes start with '10'
-        for j in range(i + 1, i + length + 1):
-            if not (data[j] >> 6 == 0b10):
+    """determines if a given data set represents a valid UTF-8 encoding"""
+    bits_count = 0
+    for i in range(len(data)):
+        if bits_count == 0:
+            bits_count = get_leading_set_bits(data[i])
+            '''1-byte (format: 0xxxxxxx)'''
+            if bits_count == 0:
+                continue
+            '''a character in UTF-8 can be 1 to 4 bytes long'''
+            if bits_count == 1 or bits_count > 4:
                 return False
-
-        i += length + 1
-
-    return True
+        else:
+            '''checks if current byte has format 10xxxxxx'''
+            if not (data[i] & (1 << 7) and not (data[i] & (1 << 6))):
+                return False
+        bits_count -= 1
+    return bits_count == 0
